@@ -1,0 +1,8 @@
+numpy
+matplotlib
+scikit-learn
+scipy
+scikit-optimize
+ipykernel
+jax
+pytorch
