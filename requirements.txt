@@ -6,3 +6,4 @@ scikit-optimize
 ipykernel
 jax
 pytorch
+einops
