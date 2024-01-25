@@ -2,6 +2,9 @@ import numpy as np
 import tensorflow as tf
 import einops
 import time
+import h5py
+import itertools
+import math
 from typing import Optional, List, Union, Tuple
 import scipy
 
@@ -10,7 +13,7 @@ sys.path.append('../')
 from dynamicalsystems.tools import qr_factorization
 
 def compute_lyapunov_exp_lstm(test_window: np.ndarray, tf_lstm,
-                         N: int, dim: int, le_dim: Optional[int] = None, dt=0.01) -> np.ndarray:
+                         N: int, dim: int, le_dim: Optional[int] = None, dt=0.01, calc_clvs=False) -> np.ndarray:
     """Compute the Lyapunov exponents for a given lstm.
 
     Args:
@@ -105,8 +108,12 @@ def compute_lyapunov_exp_lstm(test_window: np.ndarray, tf_lstm,
                     lyapunov_exp = np.cumsum(np.log(LE[1:indx]), axis=0) / np.tile(Ttot[1:indx], (le_dim, 1)).T
                     print(f'Lyapunov exponents: {lyapunov_exp[-1] } ')
 
+
     lyapunov_exp = np.cumsum(np.log(LE[1:]), axis=0) / np.tile(Ttot[1:], (le_dim, 1)).T
     print(f'Final Lyapunov exponents: {lyapunov_exp[-1] } ')
+    if calc_clvs=True:
+        thetas_clv, il, D = CLV_calculation(qq_t, rr_t, le_dim, n_cell*2, dt=0.01, fname=None)
+        return thetas_clv, lyapunov_exp
     return lyapunov_exp
 
 
@@ -203,3 +210,94 @@ def step_and_jac_analytical(u_t, h, c, lstm,  idx):
     Jac = tf.concat([tf.concat([Jac_c_new_c, Jac_c_new_h], axis=1),
                      tf.concat([Jac_h_new_c, Jac_h_new_h], axis=1)], axis=0)
     return Jac, u_t_temp, h_new, c_new
+
+def normalize(M):
+    ''' Normalizes columns of M individually '''
+    nM = np.zeros(M.shape) # normalized matrix
+    nV = np.zeros(np.shape(M)[1]) # norms of columns
+
+    for i in range(M.shape[1]):
+        nV[i] = scipy.linalg.norm(M[:,i])
+        nM[:,i] = M[:,i] / nV[i]
+
+    return nM, nV
+
+def timeseriesdot(x,y, multype):
+    tsdot = np.einsum(multype,x,y.T) #Einstein summation. Index i is time.
+    return tsdot
+
+def CLV_angles(clv, NLy):
+    #calculate angles between CLVs
+    thetas_num = int(np.math.factorial(NLy) / (np.math.factorial(2) * np.math.factorial(NLy-2)))
+    costhetas = np.zeros((clv[:,0,:].shape[1],thetas_num))
+    count = 0
+    for subset in itertools.combinations(np.arange(NLy), 2):
+        index1 = subset[0]
+        index2 = subset[1]
+        #For principal angles take the absolute of the dot product
+        costhetas[:,count] = np.absolute(timeseriesdot(clv[:,index1,:],clv[:,index2,:],'ij,ji->j'))
+        count+=1
+    thetas = 180. * np.arccos(costhetas) / math.pi
+
+    return thetas
+
+
+def CLV_calculation(QQ, RR, NLy, n_cells_x2, dt=0.01, fname=None):
+    """
+    Calculates the Covariant Lyapunov Vectors (CLVs) using the Ginelli et al, PRL 2007 method.
+
+    Args:
+    - QQ (numpy.ndarray): matrix containing the timeseries of Gram-Schmidt vectors (shape: (n_cells_x2,NLy,tly))
+    - RR (numpy.ndarray): matrix containing the timeseries of upper-triangualar R  (shape: (NLy,NLy,tly))
+    - NLy (int): number of Lyapunov exponents
+    - n_cells_x2 (int): dimension of the hidden states
+    - dt (float): integration time step
+    Returns:
+    - nothing
+    """
+    tly = np.shape(QQ)[-1]
+    su = int(tly / 10)
+    sd = int(tly / 10)
+    s  = su          # index of spinup time
+    e  = tly+1 - sd  # index of spindown time
+    tau = int(dt/dt)     #time for finite-time lyapunov exponents
+
+    #Calculation of CLVs
+    C = np.zeros((NLy,NLy,tly))  # coordinates of CLVs in local GS vector basis
+    D = np.zeros((NLy,tly))  # diagonal matrix
+    V = np.zeros((n_cells_x2,NLy,tly))  # coordinates of CLVs in physical space (each column is a vector)
+
+    # FTCLE
+    il  = np.zeros((NLy,tly+1)) #Finite-time lyapunov exponents along CLVs
+
+    # initialise components to I
+    C[:,:,-1] = np.eye(NLy)
+    D[:,-1]   = np.ones(NLy)
+    V[:,:,-1] = np.dot(np.real(QQ[:,:,-1]), C[:,:,-1])
+
+    for i in reversed(range( tly-1 ) ):
+        C[:,:,i], D[:,i]        = normalize(scipy.linalg.solve_triangular(np.real(RR[:,:,i]), C[:,:,i+1]))
+        V[:,:,i]                = np.dot(np.real(QQ[:,:,i]), C[:,:,i])
+
+    # FTCLE computations
+    for j in np.arange(D.shape[1]): #time loop
+        il[:,j] = -(1./dt)*np.log(D[:,j])
+        
+
+    #normalize CLVs before measuring their angles.
+    timetot = np.shape(V)[-1]
+
+    for i in range(NLy):
+        for t in range(timetot-1):
+            V[:,i,t] = V[:,i,t] / np.linalg.norm(V[:,i,t])
+            
+
+    thetas_clv = CLV_angles(V, NLy)
+
+    '''Save the data to hdf5 file'''
+    if fname is not None:
+        with h5py.File(fname, 'w') as hf:
+            hf.create_dataset('thetas_clv',       data=thetas_clv)
+            hf.create_dataset('FTCLE',            data=il)
+            
+    return thetas_clv, il, D

@@ -61,7 +61,7 @@ def solve_ode_LEs(N, N_trans, dt, u0, system, jacobian, params, norm_time=1, dim
     
     N_test = N - N_trans
     print('Number of timesteps',N)
-    print('Number of timesteps in test',N_test)
+    print('Number of timesteps for Lyapunov exponents',N_test)
     
         
     T = np.arange(N+1) * dt
@@ -74,7 +74,8 @@ def solve_ode_LEs(N, N_trans, dt, u0, system, jacobian, params, norm_time=1, dim
     
     # Lyapunov Exponents timeseries
     LE   = np.zeros((N_test_norm,dim))
-    
+    # Instantaneous Lyapunov Exponents timeseries
+    IBLE   = np.zeros((N_test_norm,dim))
 
     #set random orthonormal Lyapunov vectors 
     np.random.seed(0)
@@ -88,10 +89,14 @@ def solve_ode_LEs(N, N_trans, dt, u0, system, jacobian, params, norm_time=1, dim
         delta += Mtemp             
         Q, R = qr_factorization(delta)
         delta = Q[:,:dim]
+
         if i > N_trans:
             LE[i- N_trans-1]       = np.abs(np.diag(R))
+            Jacobian       = jacobian(u, params)
+            for j in range(dim):
+                    IBLE[i- N_trans-1, j] = np.dot(Q[:,j].T, np.dot(Jacobian,Q[:,j]))
         U[i] = u
     
     LEs = np.cumsum(np.log(LE[:]),axis=0) / np.tile(Ttest[:],(dim,1)).T
     print(f'Lyapunov Exponents: {LEs[-1]}')
-    return T, U, LEs
+    return T, U, LEs, IBLE
