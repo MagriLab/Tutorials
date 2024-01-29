@@ -13,13 +13,18 @@ $$
 \end{aligned}
 $$
 
+## **Tutorials: LSTM and ESN to learn Lorenz-63**
+The tutorial for the LSTM can be found in `LSTM_Tutorial_Lorenz63.ipynb` and the ESN can be found in  `ESB_Tutorial_Lorenz63.ipynb`.
 
 
-
-## **Attractor reconstruction by reference (black), LSTM (blue) and ESN (red):**
+## **Example: Attractor reconstruction by reference (black), LSTM (blue) and ESN (red):**
 <p align='center'>
 <img src="media/network_attractor.png"/>
 </p>
 
 ## **Requirements:**
-You can find a list of requirements in requirements.txt
+You can find a list of requirements in `requirements.txt`. We recommend installing the requirements in a conda environment. 
+
+For numpy version > 1.15, there may be a np.int error occurring; this is due to a missing bugfix from skopt. Follow the instructions of this issue:[Resolve Deprecated Numpy Attribute Error np.int]([https://github.com/MagriLab/EchoStateNetwork](https://github.com/MagriLab/Tutorials/issues/1)https://github.com/MagriLab/Tutorials/issues/1)
+
+
