@@ -4,8 +4,6 @@ scikit-learn
 scipy
 scikit-optimize
 ipykernel
-jax
-pytorch
 einops
 itertools
 h5py

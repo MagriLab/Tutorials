@@ -162,3 +162,5 @@ cython_debug/
 
 
 Images/
+
+TorchLSTM_Lorenz63.ipynb
