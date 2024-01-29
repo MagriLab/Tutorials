@@ -7,3 +7,5 @@ ipykernel
 jax
 pytorch
 einops
+itertools
+h5py
