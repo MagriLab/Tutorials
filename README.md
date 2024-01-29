@@ -7,16 +7,14 @@ The example system found here is the Lorenz 63 system, which is found in dynamic
 
 $$
 \begin{aligned}
-		&\dfrac{\mathrm{d}x}{\mathrm{d}t} = \sigma (y-x) \\[1em]
-	\label{eq:lorenz63}
-		&\dfrac{\mathrm{d}y}{\mathrm{d}t} = x (\rho-z) - y \\[1em]
-  \nonumber
+		&\dfrac{\mathrm{d}x}{\mathrm{d}t} = \sigma (y-x) \\
+		&\dfrac{\mathrm{d}y}{\mathrm{d}t} = x (\rho-z) - y \\
 		&\dfrac{\mathrm{d}z}{\mathrm{d}t} = xy - \beta z.
 \end{aligned}
 $$
 
 
-- [x] **License:** MIT
+
 
 ## **Attractor reconstruction by reference (black), LSTM (blue) and ESN (red):**
 <p align='center'>
