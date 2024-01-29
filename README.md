@@ -1,9 +1,9 @@
-# Tutorials: Preidictions in Chaotic Dynamical Systems 
+# Tutorials: Predictions in Chaotic Dynamical Systems 
 
 This is a tutorial to employ echo state networks (ESNs) and long short-term memory networks (LSTMs) for the prediction and analysis of chaotic dynamics. 
 This library contains both `Tensorflow` and `PyTorch` implementations for the LSTM and employs the [Magrilab/EchoStateNetowrk](https://github.com/MagriLab/EchoStateNetwork). Please note that encountered issues may be addressed there. 
 
-The example system found here is the Lorenz 63 system, which is found in dynamicalsystems.equations
+The example system found here is the Lorenz 63 system, which is found in `dynamicalsystems.equations`
 
 $$
 \begin{aligned}
