@@ -111,9 +111,9 @@ def compute_lyapunov_exp_lstm(test_window: np.ndarray, tf_lstm,
 
     lyapunov_exp = np.cumsum(np.log(LE[1:]), axis=0) / np.tile(Ttot[1:], (le_dim, 1)).T
     print(f'Final Lyapunov exponents: {lyapunov_exp[-1] } ')
-    if calc_clvs=True:
-        thetas_clv, il, D = CLV_calculation(qq_t, rr_t, le_dim, n_cell*2, dt=0.01, fname=None)
-        return thetas_clv, lyapunov_exp
+    if calc_clvs:
+        thetas_clv, il, D = CLV_calculation(qq_t, rr_t, le_dim, n_cell*2, dt=dt, fname=None)
+        return lyapunov_exp, thetas_clv
     return lyapunov_exp
 
 
